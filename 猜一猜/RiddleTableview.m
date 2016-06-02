@@ -9,22 +9,32 @@
 #import "RiddleTableview.h"
 #import "HomeViewController.h"
 #import <AFNetworking/AFNetworking.h>
+#import <MJRefresh/MJRefresh.h>
 static NSString *identfier = @"cell";
 @implementation RiddleTableview
 {
     NSMutableArray *_riddleArrs;
+    NSInteger _page;
+    NSString *typ;
 }
 -(instancetype)initWithFrame:(CGRect)frame style:(UITableViewStyle)style{
 
     if (self = [super initWithFrame:frame style:style]) {
         self.delegate = self;
         self.dataSource =self;
+        _page = 0;
+        typ = [NSString new];
         [self RequestType:@"gxmy"];
         _riddleArrs = [NSMutableArray new];
         self.showsVerticalScrollIndicator = NO;
         self.separatorStyle = UITableViewCellSeparatorStyleNone;
         self.backgroundColor = [UIColor clearColor];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(NSNotificationCenterRefsh:) name:@"NSNotificationCenterRefsh" object:nil];
+        self.mj_footer = [MJRefreshBackNormalFooter footerWithRefreshingBlock:^{
+            [self RequestType:typ];
+            [self reloadData];
+        }];
+        
     }
     return self;
 }
@@ -78,8 +88,11 @@ static NSString *identfier = @"cell";
     AFHTTPSessionManager *manger = [AFHTTPSessionManager manager];
     manger.responseSerializer = [AFHTTPResponseSerializer serializer];
     __block NSDictionary *dic = [NSDictionary new];
+   
+    _page = _page +1;
     
-    [manger GET:@"https://route.showapi.com/151-4"  parameters:@{@"showapi_appid":@"19192",@"showapi_sign":@"11ff3e127e75448b92b4c1a84658568a",@"typeId":type,@"page":@"2"} success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+    
+    [manger GET:@"https://route.showapi.com/151-4"  parameters:@{@"showapi_appid":@"19192",@"showapi_sign":@"11ff3e127e75448b92b4c1a84658568a",@"typeId":type,@"page":@(_page)} success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
         dic = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableContainers error:nil];
 //        NSLog(@"%@",dic[@"showapi_res_body"][@"pagebean"][@"contentlist"]);
         [_riddleArrs addObjectsFromArray:dic[@"showapi_res_body"][@"pagebean"][@"contentlist"]];
